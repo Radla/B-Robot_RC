@@ -27,17 +27,17 @@ This version uses micros(), which uses TIMER0
 void cppm_isr() {
   int16_t width = micros() -  last_time;
   last_time = micros();
-  if (width < 500) {  // "spacer" pulse - do nothing
+  if (width < 900) {  // "spacer" pulse - do nothing
     return;
   }
-  if (width < 1700) { // channel pulse. Get pulse width
+  if (width < 2100) { // channel pulse. Get pulse width
     chan[ch_sel] = width;
     ch_sel++;
     return;
   }
-  if (ch_sel != 8) {  // error condition. Don't save data in this case. Frame gets discarded.
+  if (ch_sel != CPPM_CHANNELS) {  // error condition. Don't save data in this case. Frame gets discarded.
     ch_sel = 0;
-    err_flag = 1; // set error flag
+    err_flag = 1; // set error flag for debug
     return;
   }
 // Sync pulse detected
@@ -45,15 +45,15 @@ void cppm_isr() {
 // Current channel setup: CH2 = throttle, CH3 = steering, CH4 = arm servo. Radio is assumed to be T-A-E-R-servo, but can be
 // whatever the user wants by remapping channels in the radio, or in the channel assignments below.
   ch_sel = 0;
-  chan[3] = (chan[3] - 600)/4;
-  chan[2] = (chan[2] - 600)/4;
+  chan[3] = (chan[3] - 1000)/4;
+  chan[2] = (chan[2] - 1000)/4;
   if (chan[3] < 0 ) chan[3] = 0;
   if (chan[3] > 255) chan[3] =255;
   if (chan[2] < 0 ) chan[2] = 0;
   if (chan[2] > 255) chan[2] =255;
   ch_thr = chan[2];
   ch_str = chan[3];
-  if ((chan[4] > 1500) && (chan[4] < 1650))ch_svo = 1; else ch_svo = 0; // servo activates if this channel is maximum
+  if ((chan[4] > 1900) && (chan[4] < 2100))ch_svo = 1; else ch_svo = 0; // servo activates if this channel is maximum
   cppm_rdy = 1; // data ready flag
   return;
 }

@@ -100,6 +100,7 @@
 #define TELEMETRY_ANGLE 1
 //#define TELEMETRY_DEBUG 1  // Dont use TELEMETRY_ANGLE and TELEMETRY_DEBUG at the same time!
 
+#define CPPM_CHANNELS 8
 #define CPPM_DEBUG 0  // Displays throttle, steering, servo channels from CPPM
 
 #define ZERO_SPEED 65535
@@ -135,6 +136,7 @@ long timer_value;
 float debugVariable;
 float dt;
 float temp;
+int16_t debug = 0;
 
 // Angle of the robot (used for stability control)
 float angle_adjusted;
@@ -254,7 +256,7 @@ void setup()
 
   // CPPM Pin
   pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), cppm_isr, CHANGE); // set CPPM pin for interrupts
+  attachInterrupt(digitalPinToInterrupt(interruptPin), cppm_isr, FALLING); // set CPPM pin for interrupts
 
   // Initialize I2C bus (MPU6050 is connected via I2C)
   Wire.begin();
@@ -266,7 +268,7 @@ void setup()
 #endif
   SerialUSB.println("JJROBOTS");
   delay(200);
-  SerialUSB.println("Don't move for 10 sec...");
+  SerialUSB.println(F("Don't move for 10 sec..."));
   MPU6050_setup();  // setup MPU6050 IMU
   delay(500);
 
@@ -387,6 +389,14 @@ void loop()
       SerialUSB.print(" ");
       SerialUSB.println(ch_svo);
 #endif
+    debug = ch_thr - ch_str;
+    if (abs(debug) > 5) {
+      SerialUSB.print(ch_thr);
+      SerialUSB.print(" ");
+      SerialUSB.print(ch_str);
+      SerialUSB.print(" ");
+      SerialUSB.println(ch_svo); 
+    }
     cppm_rdy = 0;
     OSCnewMessage = 0;
 //    if (OSCpage == 1)   // Get commands from user (PAGE1 are user commands: throttle, steering...)
