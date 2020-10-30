@@ -13,7 +13,8 @@ The following RC receivers have been tested with this code:
 Brand   Model     Protocol  channels
 Frsky   XSR       Frsky     8
 Orange  R610 V2   DSM2      6
+VTechnology V710  DSM2      7  
 
 The parameter "CPPM_CHANNELS" must be set to the number of channels to match the receiver.
 
-
+Added Sharp Sensor GP2YOA21YKOF on Pin A3. rudimentary functionality, not finished yet.

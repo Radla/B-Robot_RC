@@ -100,7 +100,7 @@
 #define TELEMETRY_ANGLE 1
 //#define TELEMETRY_DEBUG 1  // Dont use TELEMETRY_ANGLE and TELEMETRY_DEBUG at the same time!
 
-#define CPPM_CHANNELS 8
+#define CPPM_CHANNELS 7
 #define CPPM_DEBUG 0  // Displays throttle, steering, servo channels from CPPM
 
 #define ZERO_SPEED 65535
@@ -211,6 +211,9 @@ int16_t OSCmove_steps2;
 Servo servo1;
 Servo servo2;
 
+int IR_sensor;
+boolean motor_stop = false;
+
 int16_t ch_sel = 0;
 int16_t chan[8] = {1100,1100,1100,1100,1100,1100,1100,1100}; // initialize to midpoint
 int16_t q = 0;
@@ -220,6 +223,9 @@ volatile byte err_flag = 0;
 volatile uint8_t ch_thr = 128;
 volatile uint8_t ch_str = 128;
 volatile uint8_t ch_svo = 0;
+
+volatile uint8_t ch_ele = 128;
+volatile uint8_t ch_ail = 128;
 
 // INITIALIZATION
 void setup()
@@ -383,20 +389,21 @@ void loop()
   if (cppm_rdy == 1)
   {
 #if CPPM_DEBUG==1
-      SerialUSB.print(ch_thr);
+      SerialUSB.print(ch_ele);
       SerialUSB.print(" ");
-      SerialUSB.print(ch_str);
+      SerialUSB.print(ch_ail);
       SerialUSB.print(" ");
       SerialUSB.println(ch_svo);
 #endif
     debug = ch_thr - ch_str;
-    if (abs(debug) > 5) {
+/*    if (abs(debug) > 5) {
       SerialUSB.print(ch_thr);
       SerialUSB.print(" ");
       SerialUSB.print(ch_str);
       SerialUSB.print(" ");
       SerialUSB.println(ch_svo); 
     }
+    */
     cppm_rdy = 0;
     OSCnewMessage = 0;
 //    if (OSCpage == 1)   // Get commands from user (PAGE1 are user commands: throttle, steering...)
@@ -429,14 +436,21 @@ void loop()
       {
         positionControlMode = false;
 //        throttle = (OSCfader[0] - 0.5) * max_throttle;
-        temp = ch_thr;
-        steering = ch_str;
+        temp = ch_ele;
+        // IR sensor obstacle detected, little backwards
+        if (motor_stop) temp =  120;     
+          
+        steering = ch_ail;
         temp = temp/250;
         throttle = (temp - 0.5) * 780;  // max_throttle_pro setting used. Decrease using radio dual rates
         // We add some exponential on steering to smooth the center band
-//        steering = OSCfader[1] - 0.5;
+        // steering = OSCfader[1] - 0.5;
         temp = steering/250;
-        steering = 0.5 - temp;
+        
+        //steering = 0.5 - temp; //changed left/right
+        steering = temp - 0.5;
+         
+         SerialUSB.println(steering);
         if (steering > 0)
           steering = (steering * steering + 0.5 * steering) * 260; // max_steering_pro setting used. Decrease using radio dual rates
         else
@@ -603,6 +617,18 @@ void loop()
 
     // Servo2
     BROBOT_moveServo2(SERVO2_NEUTRO + (OSCfader[2] - 0.5) * SERVO2_RANGE);
+
+    // Sharp GP2YOA21YKOF 
+    IR_sensor = analogRead(A3); 
+    // Distance: http://home.roboticlab.eu/de/examples/sensor/ir_distance 
+    int d = 5461 / (IR_sensor - 17) - 2;
+    // noch geschwindigkeitsabhängig oder neigegrad
+    if (d <= 10) {
+      motor_stop = true;
+    } else {
+      motor_stop = false;
+    }
+
 
     // Normal condition?
     if ((angle_adjusted < 56) && (angle_adjusted > -56))

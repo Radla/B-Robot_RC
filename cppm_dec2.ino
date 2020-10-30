@@ -45,15 +45,43 @@ void cppm_isr() {
 // Current channel setup: CH2 = throttle, CH3 = steering, CH4 = arm servo. Radio is assumed to be T-A-E-R-servo, but can be
 // whatever the user wants by remapping channels in the radio, or in the channel assignments below.
   ch_sel = 0;
+ 
+ /*
+
+MODE 2 - Spektrum Dx5e
+Gas - throttle, chan[2]
+Seitenruder - rudder, chan[3]
+
+Höhenruder - elevator, chan[1]
+Querruder - Aileron, chan[0]
+ */
+
   chan[3] = (chan[3] - 1000)/4;
   chan[2] = (chan[2] - 1000)/4;
+
   if (chan[3] < 0 ) chan[3] = 0;
   if (chan[3] > 255) chan[3] =255;
+
   if (chan[2] < 0 ) chan[2] = 0;
   if (chan[2] > 255) chan[2] =255;
+
+// added
+  chan[0] = (chan[0] - 1000)/4;
+  chan[1] = (chan[1] - 1000)/4;
+
+  if (chan[0] < 0 ) chan[0] = 0;
+  if (chan[0] > 255) chan[0] = 255;
+
+  if (chan[1] < 0 ) chan[1] = 0;
+  if (chan[1] > 255) chan[1] =255;
+
   ch_thr = chan[2];
   ch_str = chan[3];
-  if ((chan[4] > 1900) && (chan[4] < 2100))ch_svo = 1; else ch_svo = 0; // servo activates if this channel is maximum
+
+  ch_ail = chan[0];
+  ch_ele = chan[1];
+
+  if ((chan[3] > 200) && (chan[3] < 220)) ch_svo = 1; else ch_svo = 0; // servo activates if this channel is maximum
   cppm_rdy = 1; // data ready flag
   return;
 }
